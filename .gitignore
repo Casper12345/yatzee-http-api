@@ -1,3 +1,6 @@
 .idea
 out
 *.iml
+log.log
+src/github.com
+db_log.log

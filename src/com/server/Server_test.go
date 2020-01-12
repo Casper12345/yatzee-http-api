@@ -2,7 +2,6 @@ package server
 
 import (
 	"testing"
-
 )
 
 func TestSum(t *testing.T) {
@@ -12,3 +11,4 @@ func TestSum(t *testing.T) {
 	}
 
 }
+

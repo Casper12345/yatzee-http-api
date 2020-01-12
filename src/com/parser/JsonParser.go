@@ -1,16 +1,9 @@
 package main
 
 import (
-	"com/server"
 	"encoding/json"
 	"fmt"
 )
-
-func mmm(){
-
-
-
-}
 
 type response2 struct {
 	Page   int      `json:"page"`
@@ -50,5 +43,4 @@ func main() {
 
 	fmt.Println(string(mapB))
 
-	server.Mother()
 }

@@ -1,83 +1,67 @@
 package server
 
 import (
+	"com/game_logic"
+	"com/util"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
-type Game struct {
-	DateTime string
-	Played   [][] int
-}
+var loggerPath = "./log.log"
 
-func hello(w http.ResponseWriter, req *http.Request) {
+func games(w http.ResponseWriter, req *http.Request) {
 
-	f := req.Header
+	switch req.Method {
 
-	//return "hi there"
-	method := req.Method
-
-	switch method {
 	case "GET":
-		fmt.Fprintf(w, "im get\n"+f.Get("cookie"))
+		keys, ok := req.URL.Query()["id"]
+		if !ok || len(keys) < 1 {
+			util.LogToFile(loggerPath, "missing param: 400")
+			http.Error(w, "missing id param", http.StatusBadRequest)
+		} else {
+			key, e := strconv.Atoi(keys[0])
+			if e != nil {
+				util.LogToFile(loggerPath, "cannot parse param: 400")
+				http.Error(w, "cannot parse param", http.StatusBadRequest)
+
+			}
+			resGame := game_logic.Get(key)
+			_, e = fmt.Fprint(w, "the game was: played at: "+resGame.DateTime+" and: "+fmt.Sprint(resGame.Played))
+
+		}
+
 	case "POST":
-		var g Game
-		err := json.NewDecoder(req.Body).Decode(&g)
+		var incomingGame game_logic.IncomingGame
+		err := json.NewDecoder(req.Body).Decode(&incomingGame)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
-		played := g.Played
+		played := incomingGame.Played
 
 		if checkPlayedSlice(played) {
-			fmt.Fprintf(w, "cool")
+			game_logic.Put(incomingGame)
+			_, e := fmt.Fprintf(w, "game saved")
+			if e != nil {
+				util.LogToFile(loggerPath, e.Error())
+			}
 		} else {
-			http.Error(w, "damn", http.StatusBadRequest)
+			util.LogToFile(loggerPath, "unable to verify game")
+			http.Error(w, "unable to verify game", http.StatusBadRequest)
 		}
 
 	default:
-		fmt.Fprintf(w, "sorry")
+		util.LogToFile(loggerPath, "method invalid on endpoint")
+		http.Error(w, "method invalid on endpoint", http.StatusBadRequest)
 	}
 }
 
-func checkPlayedSlice(s [][] int) bool {
-	if len(s) != 13 {
-		return false
-	} else {
-		for _, i := range s {
-			if len(i) != 5 {
-				return false
-			} else {
-				for _, i2 := range i {
-					if i2 > 6 || i2 < 1 {
-						return false
-					}
-				}
-			}
-		}
-		return true
+func RunServer(port string) {
+	http.HandleFunc("/games", games)
+	e := http.ListenAndServe(":"+port, nil)
+	if e != nil {
+		util.LogToFile(loggerPath, e.Error())
 	}
-}
-
-func another(w http.ResponseWriter, req *http.Request){
-	http.Error(w, "jeez", http.StatusBadRequest)
-}
-
-func headers(w http.ResponseWriter, req *http.Request) {
-	for name, headers := range req.Header {
-		for _, h := range headers {
-			fmt.Fprintf(w, "%v: %v\n", name, h)
-		}
-	}
-}
-
-func Mother() {
-
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/header", headers)
-	http.HandleFunc("/another", another)
-
-	http.ListenAndServe(":8090", nil)
-
 }
