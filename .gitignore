@@ -4,3 +4,4 @@ out
 log.log
 src/github.com
 db_log.log
+pkg
